@@ -1,20 +1,89 @@
 {
+    "eos": "saft.gamma_sw",
     "EOSgroup": "../../library/SWgroup.json",
     "EOScross": "../../library/SWcross.json"
     "opt_params": {
         "fit_bead" : "aCH",
-        "fit_params": ["epsilon", "sigma", "lambdar", "Sk"],
-        "lambdar_bounds" : [8.0, 60.0],
+        "fit_params": ["epsilon", "sigma", "lambda", "Sk"],
+        "lambda_bounds" : [1.0, 20.0],
         "epsilon_bounds" : [150.0, 1000.0],
-        "epsilon_CH3CH2_bounds" : [150.0, 1000.0],
+        "epsilon_aCHaCCH2_bounds" : [150.0, 1000.0],
         "sigma_bounds" : [2.5e-1, 5.5e-1]
     },
-    "Ethane": {
-        "beadconfig": [[["CH3", 2]]],
+    "opt_params": {
+        "fit_bead" : "aCCH2",
+        "fit_params": ["epsilon", "sigma", "lambda", "Sk"],
+        "lambda_bounds" : [1.0, 20.0],
+        "epsilon_bounds" : [150.0, 1000.0],
+        "epsilon_aCHaCCH2_bounds" : [150.0, 1000.0],
+        "sigma_bounds" : [2.5e-1, 5.5e-1]
+    },
+
+    "Benzene": {
+        "beadconfig": [[["aCH", 6]]],
         "datatype": "saturation_properties",
         "calctype": "saturation_properties",
-        "file": "saturation_ethane.csv",
-        "weights": { "rhov" : 0.0}
+        "file": "benzene_input.dat"
+    },
+    "Methylbenzene": {
+	"beadconfig" : [[["aCH", 6],["CH3", 1]]],
+	"datatype": "saturation_properties",
+	"calctype": "saturation_properties",
+	"file": "methylbenzene_input.dat"
+    },
+    "Ethylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "ethylbenzene_input.dat"
+    },
+    "Propylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 1],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "propylbenzene_input.dat"
+    },
+    "Butylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 2],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "butylbenzene_input.dat"
+    },
+    "Pentylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 3],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "pentylbenzene_input.dat"
+    },
+    "Hexylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 4],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "hexylbenzene_input.dat"
+    },
+    "Heptylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 5],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "heptylbenzene_input.dat"
+    },
+    "Octylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 6],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "octylbenzene_input.dat"
+    },
+    "Nonylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 7],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "nonylbenzene_input.dat"
+    },
+    "Decylbenzene": {
+        "beadconfig" : [[["aCH", 5],["aCCH2", 1],["CH2", 8],["CH3", 1]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "decylbenzene_input.dat"
     },
     "global_dict": {
         "popsize": 40,
