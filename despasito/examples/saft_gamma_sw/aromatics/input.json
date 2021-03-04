@@ -4,21 +4,12 @@
     "EOScross": "../../library/SWcross.json",
     "opt_params": {
         "fit_bead" : "aCH",
-        "fit_params": ["epsilon", "sigma", "lambda", "Sk"],
+        "fit_params": ["epsilon", "sigma", "lambda"],
         "lambda_bounds" : [1.0, 20.0],
         "epsilon_bounds" : [150.0, 1000.0],
         "epsilon_aCHaCCH2_bounds" : [150.0, 1000.0],
         "sigma_bounds" : [2.5e-1, 5.5e-1]
     },
-    "opt_params": {
-        "fit_bead" : "aCCH2",
-        "fit_params": ["epsilon", "sigma", "lambda", "Sk"],
-        "lambda_bounds" : [1.0, 20.0],
-        "epsilon_bounds" : [150.0, 1000.0],
-        "epsilon_aCHaCCH2_bounds" : [150.0, 1000.0],
-        "sigma_bounds" : [2.5e-1, 5.5e-1]
-    },
-
     "Benzene": {
         "beadconfig": [[["aCH", 6]]],
         "datatype": "saturation_properties",
