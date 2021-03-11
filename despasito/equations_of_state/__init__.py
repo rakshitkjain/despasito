@@ -9,13 +9,30 @@ from importlib import import_module
 import logging
 
 class method_stat:
-    numba = False
-    cython = False
-    python = False
+
+    def __init__(self, numba=False, cython=False, python=False):
+
+        self.numba = numba
+        self.cython = cython
+        self.python = python
+
+        if not any([numba, cython, python]):
+            self.fortran = True
+        else:
+            self.fortran = False
+
+    def __str__(self):
+
+        string = "Compilation: numba {}, cython {}, python {}, fortran {}".format(self.numba, self.cython, self.python, self.fortran)
+
+        return string
 
 logger = logging.getLogger(__name__)
 
-def eos(eos="saft.gamma_mie", numba=False, cython=False, python=False, **input_dict):
+
+def initiate_eos(
+    eos="saft.gamma_mie", numba=False, cython=False, python=False, **input_dict
+):
     """
     Interface between the user and our library of equations of state (EOS).
 
@@ -23,10 +40,16 @@ def eos(eos="saft.gamma_mie", numba=False, cython=False, python=False, **input_d
 
     Parameters
     ----------
+    eos : str, Optional, default="saft.gamma_mie"
+        Name of EOS, see EOS Types in the documentation for additional options. Input should be in the form EOSfamily.EOSname (e.g. saft.gamme_mie).
     input_dict : dict, Optional
         A dictionary of inputs for the desired EOS. See specific EOS documentation for required inputs.
-
-        - eos : str - Input should be in the form EOSfamily.EOSname (e.g. saft.gamme_mie). Note that the name of the class is EOSfamily_EOSname.
+    numba : bool, Optional, default=False
+        If True, numba Just-In-Time compilation is used.
+    cython : bool, Optional, default=False
+        If True, cython pre-compiled modules are used.
+    python : bool, Optional, default=False
+        If True, pure python is used for everything, note that if association sites are present in the SAFT EOS, this is detrimentally slow
                 
     Returns
     -------
@@ -34,33 +57,42 @@ def eos(eos="saft.gamma_mie", numba=False, cython=False, python=False, **input_d
         An instance of the defined EOS class to be used in thermodynamic computations.
     """
 
-    method_stat.numba = numba
-    method_stat.cython = cython
-    method_stat.python = python
+    input_dict["method_stat"] = method_stat(numba=numba, cython=cython, python=python)
 
-    factory_families = ["saft"] # eos families in this list have a general object with a factory to import relevent modules
+    factory_families = [
+        "saft"
+    ]  # Eos families in this list have a general object with a factory to import relevant modules
 
     logger.info("Using EOS: {}".format(eos))
 
     try:
-        eos_fam, eos_type = eos.split('.')
-    except:
-        raise Exception("Input should be in the form EOSfamily.EOSname (e.g. saft.gamme_mie).")
+        eos_fam, eos_type = eos.split(".")
+    except Exception:
+        raise ValueError(
+            "Input should be in the form EOSfamily.EOSname (e.g. saft.gamme_mie)."
+        )
 
     class_name = "EosType"
     try:
         if eos_fam in factory_families:
-            eos_module = import_module('.' + eos_fam, package="despasito.equations_of_state." + eos_fam)
-            input_dict['saft_name'] = eos_type
-        
+            eos_module = import_module(
+                "." + eos_fam, package="despasito.equations_of_state." + eos_fam
+            )
+            input_dict["saft_name"] = eos_type
+
         else:
-            eos_module = import_module('.' + eos_type, package="despasito.equations_of_state." + eos_fam)
+            eos_module = import_module(
+                "." + eos_type, package="despasito.equations_of_state." + eos_fam
+            )
         eos_class = getattr(eos_module, class_name)
-    except (AttributeError):
-        raise ImportError("Based on your input, '{}', we expect the class, {}, in a module, {}, found in the package, {}, which indicates the EOS family.".format(eos, class_name, eos_type, eos_fam))
+    except AttributeError:
+        raise ImportError(
+            "Based on your input, '{}', we expect the class, {}, in a module, {}, found in the package, {}, which indicates the EOS family.".format(
+                eos, class_name, eos_type, eos_fam
+            )
+        )
     instance = eos_class(**input_dict)
 
-    logger.info("Created {} eos object".format(eos))
+    logger.info("Created {} Eos object".format(eos))
 
     return instance
-
