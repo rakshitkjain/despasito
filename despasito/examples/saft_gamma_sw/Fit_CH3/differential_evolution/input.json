@@ -1,0 +1,25 @@
+{
+    "eos": "saft.gamma_sw",
+    "EOSgroup": "SWgroup.json",
+    "opt_params": {
+        "fit_bead" : "CH3",
+        "fit_params": ["epsilon", "sigma", "lambda", "Sk"],
+        "lambda_bounds" : [1.1, 6.0],
+        "epsilon_bounds" : [150.0, 1000.0],
+        "epsilon_CH3CH2_bounds" : [150.0, 1000.0],
+        "sigma_bounds" : [2.5e-1, 5.5e-1]
+    },
+    "Ethane": {
+        "beadconfig": [[["CH3", 2]]],
+        "datatype": "saturation_properties",
+        "calctype": "saturation_properties",
+        "file": "saturation_ethane.csv",
+        "weights": { "rhov" : 0.0}
+    },
+    "global_dict": {
+        "popsize": 40,
+        "mutation": 1.5,
+        "strategy": "best2bin",
+        "recombination": 0.1
+    }
+}
