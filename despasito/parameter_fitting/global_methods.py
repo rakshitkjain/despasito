@@ -1,3 +1,8 @@
+"""
+
+The function names of this module represents global optimization methods that can be specified.
+
+"""
 
 import os
 import numpy as np
@@ -6,27 +11,32 @@ import scipy.optimize as spo
 from inspect import getmembers
 
 from despasito.utils.parallelization import MultiprocessingJob
-from . import fit_funcs as ff
+from . import fit_functions as ff
 import despasito.utils.general_toolbox as gtb
 
 logger = logging.getLogger(__name__)
 
-def single_objective(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}):
+
+def single_objective(
+    parameters_guess, bounds, fit_bead, fit_parameter_names, exp_dict, global_opts={}
+):
     r"""
     Evaluate parameter set for equation of state with given experimental data
 
     Parameters
     ----------
-    beadparams0 : numpy.ndarray 
+    parameters_guess : numpy.ndarray 
         An array of initial guesses for parameters, these will be optimized throughout the process.
     bounds : list[tuple]
-        List of length equal to fit_params with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
+        List of length equal to fit_parameter_names with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
     fit_bead : str
-        Name of bead whose parameters are being fit, should be in bead list of beadconfig
-    fit_params : list[str]
+        Name of bead whose parameters are being fit, should be in bead list of bead_configuration
+    fit_parameter_names : list[str]
         This list of contains the name of the parameter being fit (e.g. epsilon). See EOS documentation for supported parameter names. Cross interaction parameter names should be composed of parameter name and the other bead type, separated by an underscore (e.g. epsilon_CO2).
     exp_dict : dict
         Dictionary of experimental data objects.
+    global_opts : dict, Optional, default={}
+        This dictionary is included for continuity with other global optimization methods, although this method doesn't have options.
 
     Returns
     -------
@@ -34,45 +44,60 @@ def single_objective(beadparams0, bounds, fit_bead, fit_params, exp_dict, global
         scipy OptimizedResult
     """
 
-    if len(global_dict) > 0:
-        logger.info("The fitting method 'single_objective' does not have further options")
+    if len(global_opts) > 0:
+        logger.info(
+            "The fitting method 'single_objective' does not have further options"
+        )
 
-    obj_value = ff.compute_obj(beadparams0, fit_bead, fit_params, exp_dict, bounds)
+    obj_value = ff.compute_obj(
+        parameters_guess, fit_bead, fit_parameter_names, exp_dict, bounds
+    )
 
-    result = spo.OptimizeResult(x=beadparams0,
-                                fun=obj_value,
-                                success=True,
-                                nit=0,
-                                message="Successfuly computed objective function for provided parameter set." )
+    result = spo.OptimizeResult(
+        x=parameters_guess,
+        fun=obj_value,
+        success=True,
+        nit=0,
+        message="Successfully computed objective function for provided parameter set.",
+    )
 
     return result
 
-def differential_evolution(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}, constraints=None):
+
+def differential_evolution(
+    parameters_guess,
+    bounds,
+    fit_bead,
+    fit_parameter_names,
+    exp_dict,
+    global_opts={},
+    constraints=None,
+):
     r"""
     Fit defined parameters for equation of state object using scipy.optimize.differential_evolution with given experimental data. 
 
     Parameters
     ----------
-    beadparams0 : numpy.ndarray 
+    parameters_guess : numpy.ndarray 
         An array of initial guesses for parameters, these will be optimized throughout the process.
     bounds : list[tuple]
-        List of length equal to fit_params with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
+        List of length equal to fit_parameter_names with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
     fit_bead : str
-        Name of bead whose parameters are being fit, should be in bead list of beadconfig
-    fit_params : list[str]
+        Name of bead whose parameters are being fit, should be in bead list of bead_configuration
+    fit_parameter_names : list[str]
         This list of contains the name of the parameter being fit (e.g. epsilon). See EOS documentation for supported parameter names. Cross interaction parameter names should be composed of parameter name and the other bead type, separated by an underscore (e.g. epsilon_CO2).
     exp_dict : dict
         Dictionary of experimental data objects.
-    global_dict : dict, Optional
+    global_opts : dict, Optional
 
         - init (str) - type of initiation for population, Optional, default="random" 
-        - write_intermediate_file (str) - If True, an intermediate file will be written from the method callback, default: False
+        - write_intermediate_file (str) - If True, an intermediate file will be written from the method callback, default=False
         - filename (str) - filename for callback output, if provided, `write_intermediate_file` will be set to True, Optional, default=None
         - obj_cut (float) - Cut-off objective value to write the parameters, if provided, `write_intermediate_file` will be set to True, Optional, default=None
         - etc. Other keywords for scipy.optimize.differential_evolution use the function defaults
 
     constraints : dict, Optional, default=None
-        This dicitonary of constraint types and their arguements will be converted into a tuple of constraint classes that is compatible
+        This dictionary of constraint types and their arguments will be converted into a tuple of constraint classes that is compatible
 
     Returns
     -------
@@ -81,75 +106,99 @@ def differential_evolution(beadparams0, bounds, fit_bead, fit_params, exp_dict, 
     """
 
     obj_kwargs = ["obj_cut", "filename", "write_intermediate_file"]
-    if "obj_cut" in global_dict:
-        obj_cut = global_dict["obj_cut"]
-        global_dict["write_intermediate_file"] = True
+    if "obj_cut" in global_opts:
+        obj_cut = global_opts["obj_cut"]
+        del global_opts["obj_cut"]
+        global_opts["write_intermediate_file"] = True
     else:
         obj_cut = None
 
-    if "filename" in global_dict:
-        filename = global_dict["filename"]
-        global_dict["write_intermediate_file"] = True
+    if "filename" in global_opts:
+        filename = global_opts["filename"]
+        del global_opts["filename"]
+        global_opts["write_intermediate_file"] = True
     else:
         filename = None
 
-    if "write_intermediate_file" in global_dict and global_dict["write_intermediate_file"]:
-        global_dict["callback"] = _WriteParameterResults(fit_params, obj_cut=obj_cut, filename=filename)
+    if (
+        "write_intermediate_file" in global_opts
+        and global_opts["write_intermediate_file"]
+    ):
+        del global_opts["write_intermediate_file"]
+        global_opts["callback"] = _WriteParameterResults(
+            fit_parameter_names, obj_cut=obj_cut, filename=filename
+        )
 
-    # Options for differential evolution, set defaults in new_global_dict
-    new_global_dict = {"init": "random"}
-    if global_dict:
-        for key, value in global_dict.items():
-            if key is "mpObj":
-                flag_workers = "workers" in global_dict and global_dict["workers"] > 1
+    # Options for differential evolution, set defaults in new_global_opts
+    new_global_opts = {"init": "random"}
+    if global_opts:
+        for key, value in global_opts.items():
+            if key == "MultiprocessingObject":
+                flag_workers = "workers" in global_opts and global_opts["workers"] > 1
                 if value.ncores > 1 and flag_workers:
-                    logger.info("Differential Evolution algoirithm is using {} workers.".format(value.ncores))
-                    new_global_dict["workers"] = value._pool.map
-                    exp_dict = _del_Data_mpObj(exp_dict)
+                    logger.info(
+                        "Differential Evolution algorithm is using {} workers.".format(
+                            value.ncores
+                        )
+                    )
+                    new_global_opts["workers"] = value._pool.map
+                    exp_dict = _del_Data_MultiprocessingObject(exp_dict)
             elif key not in obj_kwargs:
-                new_global_dict[key] = value
-    global_dict = new_global_dict
+                new_global_opts[key] = value
+    global_opts = new_global_opts
 
     if constraints is not None:
-        global_dict["constraints"] = ff.initialize_constraints(constraints, "class")
-    logger.info("Differential Evolution Options: {}".format(global_dict))
+        global_opts["constraints"] = ff.initialize_constraints(constraints, "class")
+    logger.info("Differential Evolution Options: {}".format(global_opts))
 
-    result = spo.differential_evolution(ff.compute_obj, bounds, args=(fit_bead, fit_params, exp_dict, bounds), **global_dict)
+    result = spo.differential_evolution(
+        ff.compute_obj,
+        bounds,
+        args=(fit_bead, fit_parameter_names, exp_dict, bounds),
+        **global_opts
+    )
 
     return result
 
-def shgo(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}, minimizer_dict={}, constraints=None):
+
+def shgo(
+    parameters_guess,
+    bounds,
+    fit_bead,
+    fit_parameter_names,
+    exp_dict,
+    global_opts={},
+    minimizer_opts={},
+    constraints=None,
+):
     r"""
     Fit defined parameters for equation of state object using scipy.optimize.shgo with given experimental data. 
 
     Parameters
     ----------
-    beadparams0 : numpy.ndarray 
+    parameters_guess : numpy.ndarray 
         An array of initial guesses for parameters, these will be optimized throughout the process.
     bounds : list[tuple]
-        List of length equal to fit_params with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
+        List of length equal to fit_parameter_names with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
     fit_bead : str
-        Name of bead whose parameters are being fit, should be in bead list of beadconfig
-    fit_params : list[str]
+        Name of bead whose parameters are being fit, should be in bead list of bead_configuration
+    fit_parameter_names : list[str]
         This list of contains the name of the parameter being fit (e.g. epsilon). See EOS documentation for supported parameter names. Cross interaction parameter names should be composed of parameter name and the other bead type, separated by an underscore (e.g. epsilon_CO2).
     exp_dict : dict
         Dictionary of experimental data objects.
-    global_dict : dict, Optional
+    global_opts : dict, Optional, default={}
 
         - init (str) - type of initiation for population, Optional, default="random" 
-        - write_intermediate_file (str) - If True, an intermediate file will be written from the method callback, default: False
-        - filename (str) - filename for callback output, if provided, `write_intermediate_file` will be set to True, Optional, default=None
-        - obj_cut (float) - Cut-off objective value to write the parameters, if provided, `write_intermediate_file` will be set to True, Optional, default=Non
         - etc. Other keywords for scipy.optimize.differential_evolution use the function defaults
 
-    minimizer_dict : dict, Optional
+    minimizer_opts : dict, Optional, default={}
         Dictionary used to define minimization type and the associated options.
 
         - method (str) - Method available to scipy.optimize.minimize, Optional, default=nelder-mead
         - options (dict) - This dictionary contains the kwargs available to the chosen method, Optional, default={'maxiter': 50}
 
     constraints : dict, Optional, default=None
-        This dicitonary of constraint types and their arguements will be converted into a tuple of dictionaries that is compatible
+        This dictionary of constraint types and their arguments will be converted into a tuple of dictionaries that is compatible
 
     Returns
     -------
@@ -157,87 +206,94 @@ def shgo(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}, mi
         scipy OptimizedResult
     """
 
-    obj_kwargs = ["obj_cut", "filename", "write_intermediate_file"]
-    if "obj_cut" in global_dict:
-        obj_cut = global_dict["obj_cut"]
-        global_dict["write_intermediate_file"] = True
-    else:
-        obj_cut = None
-
-    if "filename" in global_dict:
-        filename = global_dict["filename"]
-        global_dict["write_intermediate_file"] = True
-    else:
-        filename = None
-
-    if "write_intermediate_file" in global_dict and global_dict["write_intermediate_file"]:
-        global_dict["callback"] = _WriteParameterResults(fit_params, obj_cut=obj_cut, filename=filename)
-
-    # Options for differential evolution, set defaults in new_global_dict
-    new_global_dict = {"sampling_method": "sobol"}
-    if global_dict:
-        for key, value in global_dict.items():
-            if key is not "mpObj" and key not in obj_kwargs:
-                new_global_dict[key] = value
-    global_dict = new_global_dict
+    # Options for differential evolution, set defaults in new_global_opts
+    new_global_opts = {"sampling_method": "sobol"}
+    if global_opts:
+        for key, value in global_opts.items():
+            if key != "MultiprocessingObject" and key not in obj_kwargs:
+                new_global_opts[key] = value
+    global_opts = new_global_opts
 
     # Set up options for minimizer in basin hopping
-    new_minimizer_dict = {"method": 'nelder-mead', "options": {'maxiter': 50}}
-    if minimizer_dict:
-        for key, value in minimizer_dict.items():
+    new_minimizer_opts = {"method": "nelder-mead", "options": {"maxiter": 50}}
+    if minimizer_opts:
+        for key, value in minimizer_opts.items():
             if key == "method":
-                new_minimizer_dict[key] = value
+                new_minimizer_opts[key] = value
             elif key == "options":
                 for key2, value2 in value.items():
-                    new_minimizer_dict[key][key2] = value2
-    minimizer_dict = new_minimizer_dict
+                    new_minimizer_opts[key][key2] = value2
+    minimizer_opts = new_minimizer_opts
 
     if constraints is not None:
-        global_dict["constraints"] = ff.initialize_constraints(constraints, "dict")
-        if minimizer_dict["method"] not in ["COBYLA", "SLSQP"]:
-            minimizer_dict["method"] = "SLSQP"
-            for key, value in minimizer_dict["options"].items():
-                if key not in ["ftol", "eps", "disp", "maxiter", "finite_diff_rel_step"]:
-                    del minimizer_dict["options"][key]
+        global_opts["constraints"] = ff.initialize_constraints(constraints, "dict")
+        if minimizer_opts["method"] not in ["COBYLA", "SLSQP"]:
+            minimizer_opts["method"] = "SLSQP"
+            for key, value in minimizer_opts["options"].items():
+                if key not in [
+                    "ftol",
+                    "eps",
+                    "disp",
+                    "maxiter",
+                    "finite_diff_rel_step",
+                ]:
+                    del minimizer_opts["options"][key]
 
-    if minimizer_dict:
-        logger.warning("Minimization options were given but aren't used in this method.")
+    if minimizer_opts:
+        logger.warning(
+            "Minimization options were given but aren't used in this method."
+        )
 
-    result = spo.shgo(ff.compute_obj, bounds, args=(fit_bead, fit_params, exp_dict, bounds), **global_dict)
+    result = spo.shgo(
+        ff.compute_obj,
+        bounds,
+        args=(fit_bead, fit_parameter_names, exp_dict, bounds),
+        **global_opts
+    )
 
     return result
 
-def grid_minimization(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}, minimizer_dict={}, constraints=None):
+
+def grid_minimization(
+    parameters_guess,
+    bounds,
+    fit_bead,
+    fit_parameter_names,
+    exp_dict,
+    global_opts={},
+    minimizer_opts={},
+    constraints=None,
+):
     r"""
     Fit defined parameters for equation of state object using a custom adaptation of scipy.optimize.brute with given experimental data. 
 
     Parameters
     ----------
-    beadparams0 : numpy.ndarray 
+    parameters_guess : numpy.ndarray 
         An array of initial guesses for parameters, these will be optimized throughout the process.
     bounds : list[tuple]
-        List of length equal to fit_params with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
+        List of length equal to fit_parameter_names with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
     fit_bead : str
-        Name of bead whose parameters are being fit, should be in bead list of beadconfig
-    fit_params : list[str]
+        Name of bead whose parameters are being fit, should be in bead list of bead_configuration
+    fit_parameter_names : list[str]
         This list of contains the name of the parameter being fit (e.g. epsilon). See EOS documentation for supported parameter names. Cross interaction parameter names should be composed of parameter name and the other bead type, separated by an underscore (e.g. epsilon_CO2).
     exp_dict : dict
         Dictionary of experimental data objects.
-    global_dict : dict, Optional
+    global_opts : dict, Optional, default={}
 
         - Ns (int) - Number of grid points along the axes, Optional, default=5
         - finish (callable) - An optimization function, default=scipy.optimize.minimize
         - initial_guesses (list) - Replaces grid of values generated with bounds and Ns
         - etc. Other keywords for scipy.optimize.differential_evolution use the function defaults
 
-    minimizer_dict : dict, Optional
+    minimizer_opts : dict, Optional, default={}
         Dictionary used to define minimization type and the associated options.
 
         - method (str) - Method available to our `solve_root` function, Optional, default="lm"
         - options (dict) - This dictionary contains the kwargs available to the chosen method
 
     constraints : dict, Optional, default=None
-        This dicitonary of constraint types and their arguements will be converted into a tuple of constraint classes that is compatible
+        This dictionary of constraint types and their arguments will be converted into a tuple of constraint classes that is compatible
 
     Returns
     -------
@@ -245,44 +301,48 @@ def grid_minimization(beadparams0, bounds, fit_bead, fit_params, exp_dict, globa
         scipy OptimizedResult
     """
 
-     # Options for brute, set defaults in new_global_dict
+    # Options for brute, set defaults in new_global_opts
     flag_use_mp_object = False
-    new_global_dict = {"Ns": 5, "finish":spo.minimize}
-    if global_dict:
-        for key, value in global_dict.items():
-            if key is "mpObj":
+    new_global_opts = {"Ns": 5, "finish": spo.minimize}
+    if global_opts:
+        for key, value in global_opts.items():
+            if key == "MultiprocessingObject":
                 if value.ncores > 1:
-                    logger.info("Grid minimization algoirithm is using {} workers.".format(value.ncores))
-                    new_global_dict["mpObj"] = value
+                    logger.info(
+                        "Grid minimization algorithm is using {} workers.".format(
+                            value.ncores
+                        )
+                    )
+                    new_global_opts["MultiprocessingObject"] = value
                     flag_use_mp_object = True
-                    exp_dict = _del_Data_mpObj(exp_dict)
+                    exp_dict = _del_Data_MultiprocessingObject(exp_dict)
             else:
-                new_global_dict[key] = value
-    global_dict = new_global_dict
+                new_global_opts[key] = value
+    global_opts = new_global_opts
 
     if constraints is not None:
-        global_dict["constraints"] = ff.initialize_constraints(constraints, "dict")
+        global_opts["constraints"] = ff.initialize_constraints(constraints, "dict")
 
-    logger.info("Grid Minimization Options: {}".format(global_dict))
+    logger.info("Grid Minimization Options: {}".format(global_opts))
 
     # Set up options for minimizer
-    new_minimizer_dict = {"method": 'lm'}
-    #new_minimizer_dict = {"method": 'L-BFGS-B'}
-    if minimizer_dict:
-        for key, value in minimizer_dict.items():
+    new_minimizer_opts = {"method": "lm"}
+    # new_minimizer_opts = {"method": 'L-BFGS-B'}
+    if minimizer_opts:
+        for key, value in minimizer_opts.items():
             if key == "method":
-                new_minimizer_dict[key] = value
+                new_minimizer_opts[key] = value
             elif key == "options":
                 for key2, value2 in value.items():
-                    new_minimizer_dict[key][key2] = value2
-    minimizer_dict = new_minimizer_dict
-    logger.info("    Minimizer Options: {}".format( minimizer_dict))
+                    new_minimizer_opts[key][key2] = value2
+    minimizer_opts = new_minimizer_opts
+    logger.info("    Minimizer Options: {}".format(minimizer_opts))
 
-    args = (fit_bead, fit_params, exp_dict, bounds)
+    args = (fit_bead, fit_parameter_names, exp_dict, bounds)
 
     # Set up inputs
-    if "initial_guesses" in global_dict:
-        x0_array = global_dict["initial_guesses"]
+    if "initial_guesses" in global_opts:
+        x0_array = global_opts["initial_guesses"]
     else:
         # Initialization taken from scipy.optimize.brute
         N = len(bounds)
@@ -290,67 +350,72 @@ def grid_minimization(beadparams0, bounds, fit_bead, fit_params, exp_dict, globa
         for k in range(N):
             if type(lrange[k]) is not type(slice(None)):
                 if len(lrange[k]) < 3:
-                    lrange[k] = tuple(lrange[k]) + (complex(global_dict["Ns"]),)
+                    lrange[k] = tuple(lrange[k]) + (complex(global_opts["Ns"]),)
                 lrange[k] = slice(*lrange[k])
-        if (N == 1):
+        if N == 1:
             lrange = lrange[0]
         x0_array = np.mgrid[lrange]
         inpt_shape = x0_array.shape
-        if (N > 1):
+        if N > 1:
             x0_array = np.reshape(x0_array, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
 
-    inputs = [(x0, args, bounds, constraints, minimizer_dict) for x0 in x0_array]
+    inputs = [(x0, args, bounds, constraints, minimizer_opts) for x0 in x0_array]
 
     # Start computation
     if flag_use_mp_object:
-        x0, results, fval = global_dict["mpObj"].pool_job(_grid_minimization_wrapper, inputs)
+        x0, results, fval = global_opts["MultiprocessingObject"].pool_job(
+            _grid_minimization_wrapper, inputs
+        )
     else:
-        x0, results, fval = MultiprocessingJob.serial_job(_grid_minimization_wrapper, inputs)
+        x0, results, fval = MultiprocessingJob.serial_job(
+            _grid_minimization_wrapper, inputs
+        )
 
     # Choose final output
     result = [fval[0], results[0]]
-    logger.info("For bead: {} and parameters {}".format(fit_bead,fit_params))
+    logger.info("For bead: {} and parameters {}".format(fit_bead, fit_parameter_names))
     for i in range(len(x0_array)):
         tmp_result = results[i]
         logger.info("x0: {}, xf: {}, obj: {}".format(x0_array[i], results[i], fval[i]))
         if result[0] > fval[i]:
             result = [fval[i], tmp_result]
 
-    result = spo.OptimizeResult(x=result[1],
-                                fun=result[0],
-                                success=True,
-                                nit=len(x0)*global_dict["Ns"],
-                                message="Termination successful with {} grid points and the minimum value minimized. Note that parameters may be outside of the given bounds because of the minimizing function.".format(len(x0)*global_dict["Ns"]))
+    result = spo.OptimizeResult(
+        x=result[1],
+        fun=result[0],
+        success=True,
+        nit=len(x0) * global_opts["Ns"],
+        message="Termination successful with {} grid points and the minimum value minimized. Note that parameters may be outside of the given bounds because of the minimizing function.".format(
+            len(x0) * global_opts["Ns"]
+        ),
+    )
 
     return result
 
-def brute(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}):
+
+def brute(
+    parameters_guess, bounds, fit_bead, fit_parameter_names, exp_dict, global_opts={}
+):
     r"""
     Fit defined parameters for equation of state object using scipy.optimize.brute with given experimental data. 
 
     Parameters
     ----------
-    beadparams0 : numpy.ndarray 
+    parameters_guess : numpy.ndarray 
         An array of initial guesses for parameters, these will be optimized throughout the process.
     bounds : list[tuple]
-        List of length equal to fit_params with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
+        List of length equal to fit_parameter_names with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
     fit_bead : str
-        Name of bead whose parameters are being fit, should be in bead list of beadconfig
-    fit_params : list[str]
+        Name of bead whose parameters are being fit, should be in bead list of bead_configuration
+    fit_parameter_names : list[str]
         This list of contains the name of the parameter being fit (e.g. epsilon). See EOS documentation for supported parameter names. Cross interaction parameter names should be composed of parameter name and the other bead type, separated by an underscore (e.g. epsilon_CO2).
     exp_dict : dict
         Dictionary of experimental data objects.
-    global_dict : dict, Optional
+    global_opts : dict, Optional, default={}
 
         - Ns (int) - Number of grid points along the axes, Optional, default=5
         - finish (callable) - An optimization function, default=scipy.optimize.minimize
         - etc. Other keywords for scipy.optimize.brute use the function defaults
-
-    minimizer_dict : dict, Optional
-        Dictionary used to define minimization type and the associated options.
-
-        - method (str) - Method available to scipy.optimize.minimize
-        - options (dict) - This dictionary contains the kwargs available to the chosen method
 
     Returns
     -------
@@ -358,57 +423,80 @@ def brute(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}):
         scipy OptimizedResult
     """
 
-    # Options for brute, set defaults in new_global_dict
-    new_global_dict = {"Ns": 5, "finish":spo.minimize}
-    if global_dict:
-        for key, value in global_dict.items():
-            if key is "mpObj":
-                flag_workers = "workers" in global_dict and global_dict["workers"] > 1
+    # Options for brute, set defaults in new_global_opts
+    new_global_opts = {"Ns": 5, "finish": spo.minimize}
+    if global_opts:
+        for key, value in global_opts.items():
+            if key == "MultiprocessingObject":
+                flag_workers = "workers" in global_opts and global_opts["workers"] > 1
                 if value.ncores > 1 and flag_workers:
-                    logger.info("Brute algoirithm is using {} workers.".format(value.ncores))
-                    new_global_dict["workers"] = value._pool.map
-                    exp_dict = _del_Data_mpObj(exp_dict)
+                    logger.info(
+                        "Brute algorithm is using {} workers.".format(value.ncores)
+                    )
+                    new_global_opts["workers"] = value._pool.map
+                    exp_dict = _del_Data_MultiprocessingObject(exp_dict)
             else:
-                new_global_dict[key] = value
-    global_dict = new_global_dict
-    global_dict["full_output"] = True
+                new_global_opts[key] = value
+    global_opts = new_global_opts
+    global_opts["full_output"] = True
 
-    logger.info("Brute Options: {}".format(global_dict))
-    x0, fval, grid, Jount = spo.brute(ff.compute_obj, bounds, args=(fit_bead, fit_params, exp_dict, bounds), **global_dict)
-    result = spo.OptimizeResult(x=x0,
-                                fun=fval,
-                                success=True,
-                                nit=len(x0)*global_dict["Ns"],
-                                message="Termination successful with {} grid points and the minimum value minimized. Note that parameters may be outside of the given bounds because of the minimizing function.".format(len(x0)*global_dict["Ns"]))
+    logger.info("Brute Options: {}".format(global_opts))
+    x0, fval, grid, Jount = spo.brute(
+        ff.compute_obj,
+        bounds,
+        args=(fit_bead, fit_parameter_names, exp_dict, bounds),
+        **global_opts
+    )
+    result = spo.OptimizeResult(
+        x=x0,
+        fun=fval,
+        success=True,
+        nit=len(x0) * global_opts["Ns"],
+        message="Termination successful with {} grid points and the minimum value minimized. Note that parameters may be outside of the given bounds because of the minimizing function.".format(
+            len(x0) * global_opts["Ns"]
+        ),
+    )
 
     return result
 
-def basinhopping(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dict={}, minimizer_dict={}):
+
+def basinhopping(
+    parameters_guess,
+    bounds,
+    fit_bead,
+    fit_parameter_names,
+    exp_dict,
+    global_opts={},
+    minimizer_opts={},
+):
     r"""
     Fit defined parameters for equation of state object using scipy.optimize.basinhopping with given experimental data. 
 
     Parameters
     ----------
-    beadparams0 : numpy.ndarray 
+    parameters_guess : numpy.ndarray 
         An array of initial guesses for parameters, these will be optimized throughout the process.
     bounds : list[tuple]
-        List of length equal to fit_params with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
+        List of length equal to fit_parameter_names with lists of pairs for minimum and maximum bounds of parameter being fit. Defaults are broad, recommend specification.
     fit_bead : str
-        Name of bead whose parameters are being fit, should be in bead list of beadconfig
-    fit_params : list[str]
+        Name of bead whose parameters are being fit, should be in bead list of bead_configuration
+    fit_parameter_names : list[str]
         This list of contains the name of the parameter being fit (e.g. epsilon). See EOS documentation for supported parameter names. Cross interaction parameter names should be composed of parameter name and the other bead type, separated by an underscore (e.g. epsilon_CO2).
     exp_dict : dict
         Dictionary of experimental data objects.
-    global_dict : dict, Optional
+    global_opts : dict, Optional, default={}
 
         - niter (int) - The number of basin-hopping iterations, Optional, default=10 
         - T (float) - The "temperature" parameter for the accept or reject criterion. For best results T should be comparable to the separation (in function value) between local minima., Optional, default=0.5
         - niter_success (int) Stop the run if the global minimum candidate remains the same for this number of iterations., Optional, default=3
         - stepsize (float) - Maximum step size for use in the random displacement., Optional, default=0.1
         - take_step (callable) - Set with custom BasinStep class
+        - write_intermediate_file (str) - If True, an intermediate file will be written from the method callback, default=False
+        - filename (str) - filename for callback output, if provided, `write_intermediate_file` will be set to True, Optional, default=None
+        - obj_cut (float) - Cut-off objective value to write the parameters, if provided, `write_intermediate_file` will be set to True, Optional, default=None
         - etc. Other keywords for scipy.optimize.basinhopping use the function defaults
 
-    minimizer_dict : dict, Optional
+    minimizer_opts : dict, Optional, default={}
         Dictionary used to define minimization type and the associated options.
 
         - method (str) - Method available to scipy.optimize.minimize
@@ -419,47 +507,80 @@ def basinhopping(beadparams0, bounds, fit_bead, fit_params, exp_dict, global_dic
     Objective : obj
         scipy OptimizedResult
     """
+    obj_kwargs = ["obj_cut", "filename", "write_intermediate_file"]
+    if "obj_cut" in global_opts:
+        obj_cut = global_opts["obj_cut"]
+        del global_opts["obj_cut"]
+        global_opts["write_intermediate_file"] = True
+    else:
+        obj_cut = None
+
+    if "filename" in global_opts:
+        filename = global_opts["filename"]
+        del global_opts["filename"]
+        global_opts["write_intermediate_file"] = True
+    else:
+        filename = None
+
+    if (
+        "write_intermediate_file" in global_opts
+        and global_opts["write_intermediate_file"]
+    ):
+        del global_opts["write_intermediate_file"]
+        global_opts["callback"] = _WriteParameterResults(
+            fit_parameter_names, obj_cut=obj_cut, filename=filename
+        )
 
     # Options for basin hopping
-    new_global_dict = {"niter": 10, "T": 0.5, "niter_success": 3}
-    if global_dict:
-        for key, value in global_dict.items():
-            if key is not "mpObj":
-                new_global_dict[key] = value
-    global_dict = new_global_dict
+    new_global_opts = {"niter": 10, "T": 0.5, "niter_success": 3}
+    if global_opts:
+        for key, value in global_opts.items():
+            if key != "MultiprocessingObject":
+                new_global_opts[key] = value
+    global_opts = new_global_opts
 
     # Set up options for minimizer in basin hopping
-    new_minimizer_dict = {"method": 'nelder-mead', "options": {'maxiter': 50}}
-    if minimizer_dict:
-        for key, value in minimizer_dict.items():
+    new_minimizer_opts = {"method": "nelder-mead", "options": {"maxiter": 50}}
+    if minimizer_opts:
+        for key, value in minimizer_opts.items():
             if key == "method":
-                new_minimizer_dict[key] = value
+                new_minimizer_opts[key] = value
             elif key == "options":
                 for key2, value2 in value.items():
-                    new_minimizer_dict[key][key2] = value2
-    minimizer_dict = new_minimizer_dict
+                    new_minimizer_opts[key][key2] = value2
+    minimizer_opts = new_minimizer_opts
 
     try:
-        if "stepsize" in global_dict:
-            stepsize = global_dict["stepsize"]
+        if "stepsize" in global_opts:
+            stepsize = global_opts["stepsize"]
         else:
             stepsize = 0.1
         stepmag = np.transpose(np.array(bounds))[1]
-        global_dict["take_step"] = _BasinStep(stepmag, stepsize=stepsize)
+        global_opts["take_step"] = _BasinStep(stepmag, stepsize=stepsize)
         custombounds = _BasinBounds(bounds)
-    except:
-            raise TypeError("Could not initialize BasinStep and/or BasinBounds")
+    except Exception:
+        raise TypeError("Could not initialize BasinStep and/or BasinBounds")
 
-    logger.info("Basin Hopping Options: {}".format(global_dict))
-    minimizer_kwargs={"args": (fit_bead, fit_params, exp_dict, bounds),**minimizer_dict}
-    if "minimizer_kwargs" in global_dict:
-        minimizer_kwargs.update(global_dict["minimizer_kwargs"])
-        del global_dict["minimizer_kwargs"]
-    result = spo.basinhopping(ff.compute_obj, beadparams0, **global_dict, accept_test=custombounds, minimizer_kwargs=minimizer_kwargs)
+    logger.info("Basin Hopping Options: {}".format(global_opts))
+    minimizer_kwargs = {
+        "args": (fit_bead, fit_parameter_names, exp_dict, bounds),
+        **minimizer_opts,
+    }
+    if "minimizer_kwargs" in global_opts:
+        minimizer_kwargs.update(global_opts["minimizer_kwargs"])
+        del global_opts["minimizer_kwargs"]
+    result = spo.basinhopping(
+        ff.compute_obj,
+        parameters_guess,
+        **global_opts,
+        accept_test=custombounds,
+        minimizer_kwargs=minimizer_kwargs
+    )
 
     return result
 
-# ______________________________________________ Supporting Classes and Functions ___________________________________________
+
+# ___________ Supporting Classes and Functions ___________________________________________
 def _grid_minimization_wrapper(args):
     """ Wrapper for minimization method in grid_minimization
     """
@@ -475,23 +596,29 @@ def _grid_minimization_wrapper(args):
         method = "least_squares"
 
     try:
-        result = gtb.solve_root( ff.compute_obj, args=obj_args, method=method, x0=x0, bounds=bounds, options=opts)
-    except:
-        result = np.nan*np.ones(len(x0))
+        result = gtb.solve_root(
+            ff.compute_obj,
+            args=obj_args,
+            method=method,
+            x0=x0,
+            bounds=bounds,
+            options=opts,
+        )
+    except Exception:
+        result = np.nan * np.ones(len(x0))
 
-    if np.sum(np.abs(result-x0)) < 1e-6:
-        result = np.nan*np.ones(len(x0))
+    if np.sum(np.abs(result - x0)) < 1e-6:
+        result = np.nan * np.ones(len(x0))
 
-    logger.info("Starting parameters: {}, converged to: {}".format(x0,result))
+    logger.info("Starting parameters: {}, converged to: {}".format(x0, result))
 
     fval = ff.compute_obj(result, *obj_args)
 
     return x0, result, fval
 
+
 class _BasinStep(object):
-    r"""
-    Custom basin step used by scipy.optimize.basinhopping function.
-    
+    r""" Custom basin step used by scipy.optimize.basinhopping function.
     """
 
     def __init__(self, stepmag, stepsize=0.05):
@@ -501,15 +628,15 @@ class _BasinStep(object):
         ----------
         stepmag : list
             List of step magnitudes
-        stepsize : float
-            default 0.05
+        stepsize : float, Optional, default=0.05
+            Step size 
 
         Attributes
         ----------
         stepmag : list
             List of step magnitudes
-        stepsize : float
-            default 0.05
+        stepsize : float, Optional, default=0.05
+            Step size
             
         """
 
@@ -532,7 +659,7 @@ class _BasinStep(object):
             
         """
 
-        # Save intital guess in array
+        # Save initial guess in array
         xold = np.copy(x)
 
         # Loop for number of times to start over
@@ -547,13 +674,14 @@ class _BasinStep(object):
                 # If a value of x is negative, don't  break the cycle
                 if x[i] < 0.0:
                     breakloop = False
-            if breakloop: break
-            logger.info("Basin Step after {} iterations:\n    {}".format(j,x))
+            if breakloop:
+                break
+            logger.info("Basin Step after {} iterations:\n    {}".format(j, x))
         return x
 
+
 class _BasinBounds(object):
-    r"""
-    Object used by scipy.optimize.basinhopping to set bounds of parameters.
+    r""" Object used by scipy.optimize.basinhopping to set bounds of parameters.
     """
 
     def __init__(self, bounds):
@@ -567,7 +695,7 @@ class _BasinBounds(object):
         Attributes
         ----------
         xmin : numpy.ndarray
-            Array of minimun values for each parameter
+            Array of minimum values for each parameter
         xman : numpy.ndarray
             Array of maximum values for each parameter
             
@@ -581,8 +709,11 @@ class _BasinBounds(object):
             
         Parameters
         ----------
-        x_new : numpy.ndarray
-            Guess in parameters values
+        kwargs
+            Keyword arguments used in BasinBounds object for scipy.optimize.basinhopping
+            
+            - x_new (numpy.ndarray) - Guess in parameters values
+            - f_new (numpy.ndarray) - Objective value for given parameters
 
         Returns
         -------
@@ -597,16 +728,24 @@ class _BasinBounds(object):
         feasible1 = np.abs(kwargs["f_new"]) < np.inf
         feasible2 = not np.isnan(kwargs["f_new"])
 
-        if (tmax and tmin and feasible1 and feasible2):
-            logger.info("Accept parameters: {}, with obj. function: {}".format(x,kwargs["f_new"]))
+        if tmax and tmin and feasible1 and feasible2:
+            logger.info(
+                "Accept parameters: {}, with obj. function: {}".format(
+                    x, kwargs["f_new"]
+                )
+            )
         else:
-            logger.info("Reject parameters: {}, with obj. function: {}".format(x,kwargs["f_new"]))
+            logger.info(
+                "Reject parameters: {}, with obj. function: {}".format(
+                    x, kwargs["f_new"]
+                )
+            )
 
         return tmax and tmin and feasible1 and feasible2
 
+
 class _WriteParameterResults(object):
-    r"""
-    Object used by scipy.optimize.basinhopping to set bounds of parameters.
+    r""" Object used by scipy.optimize.basinhopping to set bounds of parameters.
     """
 
     def __init__(self, beadnames, obj_cut=None, filename=None):
@@ -616,42 +755,59 @@ class _WriteParameterResults(object):
         ----------
         beadnames : list[str]
             List of bead names for filename header
-        obj_cut : float, Optional, default: np.inf
+        obj_cut : float, Optional, default=np.inf
             Cut-off objective value to write the parameters
-        filename : str, Optional, default: parameters.txt
+        filename : str, Optional, default=parameters.txt
             File to which parameters are written
+
+        Returns
+        -------
+        Initiate file with parameters
             
         """
 
-        if obj_cut is None:
+        if obj_cut == None:
             self.obj_cut = np.inf
         else:
             self.obj_cut = obj_cut
 
-        if filename is None:
+        if filename == None:
             filename = "parameters.txt"
 
         if os.path.isfile(filename):
             old_fname = filename
             for i in range(20):
-                filename = "{}_{}".format(i,old_fname)
+                filename = "{}_{}".format(i, old_fname)
                 if not os.path.isfile(filename):
-                    logger.info("File '{}' already exists, using {}.".format(old_fname,filename))
+                    logger.info(
+                        "File '{}' already exists, using {}.".format(
+                            old_fname, filename
+                        )
+                    )
                     break
+
+        self.beadnames = beadnames
         self.filename = filename
         self.ninit = 0
 
-        with open(filename, 'w') as f:
-            f.write("# n, convergence, "+", ".join(beadnames)+"\n")
-
-    def __call__(self, x_new, convergence=0):
+    def __call__(self, *args, **kwargs):
         r"""
+        The provided args and kwargs change depending on the global optimization method. This class is equipped to distinguish the callback function for differential_evolution (length equal to ) and basinhopping.
             
         Parameters
         ----------
-        x_new : numpy.ndarray
-            Guess in parameters values
+        args
+            The provided args change depending on the global optimization method.
+        
+            - x_new (numpy.ndarray) - Current parameter values being evaluated, used in both algorithms
+            - f_new (float) - Current object function value for x_new, used in basinhopping
+            - accept (bool) - Whether or not that minimum was accepted, used in basinhopping
 
+        kwargs
+            The provided kwargs change depending on the global optimization method.
+
+            - convergence (float) - Used in differential evolution, the fractional value of the population convergence. When greater than one the function halts.
+            
         Returns
         -------
         value : bool
@@ -659,17 +815,43 @@ class _WriteParameterResults(object):
             
         """
 
-        if convergence < self.obj_cut:
-            with open(self.filename, 'a') as f:
-                tmp = [self.ninit, convergence]+[x for x in x_new]
-                f.write(("{}, "*len(tmp)).format(*tmp)+"\n")
+        if "convergence" in kwargs:  # Used in differential_evolution
+            if kwargs["convergence"] < self.obj_cut:
+                if not os.path.isfile(self.filename):
+                    with open(self.filename, "w") as f:
+                        f.write(
+                            "# n, convergence, {}\n".format(", ".join(self.beadnames))
+                        )
+
+                with open(self.filename, "a") as f:
+                    tmp = [self.ninit, kwargs["convergence"]] + list(args[0])
+                    f.write(("{}, " * len(tmp)).format(*tmp) + "\n")
+
+        elif len(args) == 3:  # used in basinhopping
+            if args[2] or args[1] < self.obj_cut:
+                if not os.path.isfile(self.filename):
+                    with open(self.filename, "w") as f:
+                        f.write(
+                            "# n, obj. value, accepted, {}\n".format(
+                                ", ".join(self.beadnames)
+                            )
+                        )
+
+                with open(self.filename, "a") as f:
+                    tmp = [self.ninit, args[1], args[2]] + list(args[0])
+                    f.write(("{}, " * len(tmp)).format(*tmp) + "\n")
+        else:
+            raise ValueError(
+                "Unknown inputs. This function is equipped to handle differential_evolution and basinhopping algorithms."
+            )
 
         self.ninit += 1
 
         return False
 
-def _del_Data_mpObj(dictionary):
-    r""" A dictionary of fitting objects will remove mpObj attributes so that the multiprocessing pool can be used by the fitting algorithm.
+
+def _del_Data_MultiprocessingObject(dictionary):
+    r""" A dictionary of fitting objects will remove MultiprocessingObject attributes so that the multiprocessing pool can be used by the fitting algorithm.
 
     Parameters
     ----------
@@ -684,7 +866,7 @@ def _del_Data_mpObj(dictionary):
 
     new_dictionary = dictionary.copy()
     for key in new_dictionary:
-        if "mpObj" in new_dictionary[key].thermodict:
-            del new_dictionary[key].thermodict["mpObj"]
+        if "MultiprocessingObject" in new_dictionary[key].thermodict:
+            del new_dictionary[key].thermodict["MultiprocessingObject"]
 
     return new_dictionary
