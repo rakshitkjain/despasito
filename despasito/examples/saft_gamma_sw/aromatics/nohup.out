@@ -1,0 +1,126 @@
+Traceback (most recent call last):
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 387, in process_exp_data_file
+    np.genfromtxt(fname, delimiter=",", names=True, skip_header=1)
+  File "/Users/rkjain2/anaconda2/envs/despasito_env/lib/python3.7/site-packages/numpy/lib/npyio.py", line 2103, in genfromtxt
+    raise ValueError(errmsg)
+ValueError: Some errors were detected !
+    Line #3 (got 4 columns instead of 1)
+    Line #4 (got 4 columns instead of 1)
+    Line #5 (got 4 columns instead of 1)
+    Line #6 (got 4 columns instead of 1)
+    Line #7 (got 4 columns instead of 1)
+    Line #8 (got 4 columns instead of 1)
+    Line #9 (got 4 columns instead of 1)
+    Line #10 (got 4 columns instead of 1)
+    Line #11 (got 4 columns instead of 1)
+    Line #12 (got 4 columns instead of 1)
+    Line #13 (got 4 columns instead of 1)
+    Line #14 (got 4 columns instead of 1)
+    Line #15 (got 4 columns instead of 1)
+    Line #16 (got 4 columns instead of 1)
+    Line #17 (got 4 columns instead of 1)
+    Line #18 (got 4 columns instead of 1)
+    Line #19 (got 4 columns instead of 1)
+    Line #20 (got 4 columns instead of 1)
+    Line #21 (got 4 columns instead of 1)
+    Line #22 (got 4 columns instead of 1)
+    Line #23 (got 4 columns instead of 1)
+    Line #24 (got 4 columns instead of 1)
+    Line #25 (got 4 columns instead of 1)
+    Line #26 (got 4 columns instead of 1)
+    Line #27 (got 4 columns instead of 1)
+    Line #28 (got 4 columns instead of 1)
+    Line #29 (got 4 columns instead of 1)
+    Line #30 (got 4 columns instead of 1)
+    Line #31 (got 4 columns instead of 1)
+    Line #32 (got 4 columns instead of 1)
+    Line #33 (got 4 columns instead of 1)
+    Line #34 (got 4 columns instead of 1)
+    Line #35 (got 4 columns instead of 1)
+    Line #36 (got 4 columns instead of 1)
+    Line #37 (got 4 columns instead of 1)
+    Line #38 (got 4 columns instead of 1)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rkjain2/anaconda2/envs/despasito_env/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/Users/rkjain2/anaconda2/envs/despasito_env/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/__main__.py", line 68, in <module>
+    run(**kwargs)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/main.py", line 101, in run
+    filename, path, **kwargs
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 143, in extract_calc_data
+    thermo_dict = process_param_fit_inputs(thermo_dict)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 307, in process_param_fit_inputs
+    new_thermo_dict["exp_data"][key] = process_exp_data(value)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 353, in process_exp_data
+    file_dict = process_exp_data_file(value)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 391, in process_exp_data_file
+    "Cannot import '{}', Check data file formatting.".format(fname)
+ValueError: Cannot import './heptylbenzene_input.csv', Check data file formatting.
+Traceback (most recent call last):
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 387, in process_exp_data_file
+    np.genfromtxt(fname, delimiter=",", names=True, skip_header=1)
+  File "/Users/rkjain2/anaconda2/envs/despasito_env/lib/python3.7/site-packages/numpy/lib/npyio.py", line 2103, in genfromtxt
+    raise ValueError(errmsg)
+ValueError: Some errors were detected !
+    Line #3 (got 4 columns instead of 1)
+    Line #4 (got 4 columns instead of 1)
+    Line #5 (got 4 columns instead of 1)
+    Line #6 (got 4 columns instead of 1)
+    Line #7 (got 4 columns instead of 1)
+    Line #8 (got 4 columns instead of 1)
+    Line #9 (got 4 columns instead of 1)
+    Line #10 (got 4 columns instead of 1)
+    Line #11 (got 4 columns instead of 1)
+    Line #12 (got 4 columns instead of 1)
+    Line #13 (got 4 columns instead of 1)
+    Line #14 (got 4 columns instead of 1)
+    Line #15 (got 4 columns instead of 1)
+    Line #16 (got 4 columns instead of 1)
+    Line #17 (got 4 columns instead of 1)
+    Line #18 (got 4 columns instead of 1)
+    Line #19 (got 4 columns instead of 1)
+    Line #20 (got 4 columns instead of 1)
+    Line #21 (got 4 columns instead of 1)
+    Line #22 (got 4 columns instead of 1)
+    Line #23 (got 4 columns instead of 1)
+    Line #24 (got 4 columns instead of 1)
+    Line #25 (got 4 columns instead of 1)
+    Line #26 (got 4 columns instead of 1)
+    Line #27 (got 4 columns instead of 1)
+    Line #28 (got 4 columns instead of 1)
+    Line #29 (got 4 columns instead of 1)
+    Line #30 (got 4 columns instead of 1)
+    Line #31 (got 4 columns instead of 1)
+    Line #32 (got 4 columns instead of 1)
+    Line #33 (got 4 columns instead of 1)
+    Line #34 (got 4 columns instead of 1)
+    Line #35 (got 4 columns instead of 1)
+    Line #36 (got 4 columns instead of 1)
+    Line #37 (got 4 columns instead of 1)
+    Line #38 (got 4 columns instead of 1)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rkjain2/anaconda2/envs/despasito_env/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/Users/rkjain2/anaconda2/envs/despasito_env/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/__main__.py", line 68, in <module>
+    run(**kwargs)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/main.py", line 101, in run
+    filename, path, **kwargs
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 143, in extract_calc_data
+    thermo_dict = process_param_fit_inputs(thermo_dict)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 307, in process_param_fit_inputs
+    new_thermo_dict["exp_data"][key] = process_exp_data(value)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 353, in process_exp_data
+    file_dict = process_exp_data_file(value)
+  File "/Users/rkjain2/.local/lib/python3.7/site-packages/despasito-0+untagged.484.g75f547f-py3.7-macosx-10.9-x86_64.egg/despasito/input_output/read_input.py", line 391, in process_exp_data_file
+    "Cannot import '{}', Check data file formatting.".format(fname)
+ValueError: Cannot import './heptylbenzene_input.csv', Check data file formatting.

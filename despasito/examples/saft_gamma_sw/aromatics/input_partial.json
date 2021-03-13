@@ -2,22 +2,25 @@
     "eos": "saft.gamma_sw",
     "EOSgroup": "SWgroup.json",
     "EOScross": "SWcross.json",
-    "opt_params": {
+    "optimization_parameters": {
         "fit_bead" : "aCH",
-        "fit_params": ["epsilon", "sigma", "lambda"],
+        "fit_parameter_names": ["epsilon", "sigma", "lambda"],
         "lambda_bounds" : [1.2, 3.0],
         "epsilon_bounds" : [220.0, 500.0],
         "epsilon_aCHaCCH2_bounds" : [200.0, 1000.0],
         "sigma_bounds" : [2.0e-1, 3.5e-1]
     },
     "Benzene": {
-        "beadconfig": [[["aCH", 6]]],
-        "datatype": "saturation_properties",
+        "bead_configuration": [[["aCH", 6]]],
+        "data_class_type": "saturation_properties",
         "calctype": "saturation_properties",
         "file": "benzene_input.csv"
     },
     "global_dict": {
-        "method": "grid_minimization",
-        "Ns": 4
+        "popsize": 40,
+        "mutation": 1.5,
+        "strategy": "best2bin",
+        "recombination": 0.1
     }
+
 }
